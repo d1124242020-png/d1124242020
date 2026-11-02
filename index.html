@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>徐少勇SDGs 不塑永續-淨灘</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Animated Ocean Waves */
+        .wave {
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 140'%3E%3Cpath fill='%2338bdf8' fill-opacity='0.6' d='M0,32L48,42.7C96,53,192,75,288,80C384,85,480,75,576,64C672,53,768,43,816,37.3L864,32L864,0L816,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+            background-size: 800px 140px;
+            animation: waveAnim 12s linear infinite;
+        }
+
+        .wave-2 {
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 140'%3E%3Cpath fill='%230284c7' fill-opacity='0.4' d='M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,816,58.7L864,64L864,0L816,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+            background-size: 800px 140px;
+            animation: waveAnim 8s linear infinite reverse;
+        }
+
+        @keyframes waveAnim {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 800px; }
+        }
+
+        /* Trash floating pickup animation */
+        .trash-item {
+            transition: transform 0.15s ease-out, opacity 0.25s ease-out;
+            cursor: pointer;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.25));
+        }
+
+        .trash-item:hover {
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9)) drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+        }
+
+        /* Point Floating Popup */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-45px) scale(1.3); }
+        }
+
+        .score-float {
+            position: absolute;
+            animation: floatUp 0.75s ease-out forwards;
+            pointer-events: none;
+            font-weight: 900;
+            text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+
+        /* Sea Foam Sparkle */
+        .foam {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.8) 15%, transparent 20%);
+            background-size: 30px 30px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden bg-slate-900 flex flex-col relative select-none">
+
+    <!-- Top Header Navigation Bar -->
+    <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-sky-500/30 text-white px-4 py-3 flex justify-between items-center z-40 shadow-xl">
+        <!-- Title Left -->
+        <div class="flex items-center gap-3">
+            <div class="bg-emerald-500 text-white p-2 rounded-xl shadow-lg shadow-emerald-500/30">
+                <i class="fa-solid fa-leaf text-2xl"></i>
+            </div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400">
+                徐少勇SDGs 不塑永續-淨灘
+            </h1>
+        </div>
+
+        <!-- Score & Stats Right -->
+        <div class="flex items-center gap-3 sm:gap-6">
+            <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 shadow-inner">
+                <i class="fa-solid fa-layer-group text-amber-400 text-base sm:text-lg"></i>
+                <div class="flex flex-col sm:flex-row sm:gap-1 items-baseline">
+                    <span class="text-xs text-slate-400">關卡:</span>
+                    <span id="level-display" class="text-lg sm:text-xl font-black text-amber-300">1</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 shadow-inner">
+                <i class="fa-solid fa-trash-can text-rose-400 text-base sm:text-lg"></i>
+                <div class="flex flex-col sm:flex-row sm:gap-1 items-baseline">
+                    <span class="text-xs text-slate-400">剩餘:</span>
+                    <span id="trash-count" class="text-lg sm:text-xl font-black text-rose-300">50</span>
+                    <span class="text-xs text-slate-400">/ 50</span>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 sm:px-5 sm:py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-orange-500/20 text-white">
+                <i class="fa-solid fa-trophy text-base sm:text-lg text-yellow-200 animate-pulse"></i>
+                <div class="flex flex-col sm:flex-row sm:gap-1 items-baseline">
+                    <span class="text-xs opacity-90">得分:</span>
+                    <span id="score-display" class="text-lg sm:text-2xl font-black tracking-wide">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Canvas Container -->
+    <main id="game-container" class="relative flex-1 w-full h-full flex flex-col overflow-hidden">
+
+        <!-- Top Half: Ocean Environment (0% ~ 50% Height) -->
+        <div class="relative w-full h-[50%] bg-gradient-to-b from-sky-400 via-sky-500 to-teal-600 overflow-hidden shadow-inner">
+            <!-- Sun Rays Effect -->
+            <div class="absolute inset-0 bg-gradient-to-br from-yellow-200/20 via-transparent to-transparent pointer-events-none"></div>
+
+            <!-- Animated Clouds -->
+            <div class="absolute top-6 left-10 text-white/40 text-4xl animate-bounce duration-1000"><i class="fa-solid fa-cloud"></i></div>
+            <div class="absolute top-12 right-24 text-white/30 text-6xl"><i class="fa-solid fa-cloud"></i></div>
+            <div class="absolute top-4 left-1/2 text-white/20 text-5xl"><i class="fa-solid fa-cloud"></i></div>
+
+            <!-- Sailboats decorative -->
+            <div class="absolute bottom-16 right-1/4 text-white/70 text-2xl drop-shadow-md">
+                <i class="fa-solid fa-sailboat"></i>
+            </div>
+
+            <!-- Ocean Waves & Foam at the shoreline boundary -->
+            <div class="absolute bottom-0 w-full h-16 wave-2 pointer-events-none"></div>
+            <div class="absolute bottom-0 w-full h-12 wave pointer-events-none"></div>
+            <div class="absolute bottom-0 w-full h-4 foam opacity-70 pointer-events-none"></div>
+        </div>
+
+        <!-- Bottom Half: Sandy Beach Area (50% ~ 100% Height - Where Trash Spawns) -->
+        <div id="beach-area" class="relative w-full h-[50%] bg-gradient-to-b from-amber-200 via-amber-300 to-yellow-600 overflow-hidden shadow-inner border-t-2 border-teal-200/40">
+            <!-- Sand Texture & Decor -->
+            <div class="absolute inset-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:16px_16px] opacity-15 pointer-events-none"></div>
+            
+            <!-- Beach Decor Items -->
+            <div class="absolute top-4 left-8 text-amber-700/30 text-xl pointer-events-none"><i class="fa-solid fa-umbrella-beach"></i></div>
+            <div class="absolute bottom-6 right-12 text-amber-700/30 text-2xl pointer-events-none"><i class="fa-solid fa-compact-disc"></i></div>
+            <div class="absolute bottom-10 left-1/3 text-amber-700/20 text-xl pointer-events-none"><i class="fa-solid fa-water"></i></div>
+
+            <!-- Trash Spawn Container -->
+            <div id="trash-layer" class="absolute inset-0 w-full h-full"></div>
+        </div>
+
+    </main>
+
+    <!-- Victory Modal Popup -->
+    <div id="victory-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-300">
+        <div class="bg-slate-900 border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl relative overflow-hidden transform scale-95 transition-transform duration-300">
+            <!-- Decorative Banner Background -->
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="w-20 h-20 bg-emerald-500/20 border border-emerald-400/40 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400 text-4xl shadow-lg">
+                <i class="fa-solid fa-trophy animate-bounce"></i>
+            </div>
+
+            <h2 class="text-3xl sm:text-4xl font-black text-white mb-2 tracking-wide">任務成功！</h2>
+            <p class="text-slate-300 text-sm sm:text-base mb-6">太棒了！您已經將海灘上的 50 個廢棄物清理乾淨，保護了海洋生態！</p>
+
+            <!-- Stats Box -->
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 mb-6 grid grid-cols-2 gap-4">
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400 mb-1">完成關卡</span>
+                    <span id="modal-level" class="text-2xl font-black text-amber-400">1</span>
+                </div>
+                <div class="flex flex-col items-center border-l border-slate-700">
+                    <span class="text-xs text-slate-400 mb-1">獲得總分</span>
+                    <span id="modal-score" class="text-2xl font-black text-emerald-400">0</span>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="btn-next-level" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/30 active:scale-95 transition flex items-center justify-center gap-2">
+                    <span>前往下一關</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <button id="btn-restart" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-3 px-4 rounded-xl border border-slate-600 active:scale-95 transition">
+                    重新開始
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Effects using Web Audio API (No external sound files required) -->
+    <script>
+        class SoundController {
+            constructor() {
+                this.audioCtx = null;
+            }
+
+            init() {
+                if (!this.audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.audioCtx = new AudioContext();
+                }
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+            }
+
+            playPickupSound(points) {
+                this.init();
+                if (!this.audioCtx) return;
+
+                const now = this.audioCtx.currentTime;
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+
+                // Pitch corresponds to point value
+                const baseFreq = 400 + (points * 12); 
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.12);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+
+            playLevelCompleteSound() {
+                this.init();
+                if (!this.audioCtx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, index) => {
+                    const now = this.audioCtx.currentTime + (index * 0.1);
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                });
+            }
+        }
+
+        const soundCtrl = new SoundController();
+    </script>
+
+    <!-- Main Game Logic -->
+    <script>
+        // Trash Data Definitions & Vector SVG Generator
+        const TRASH_TYPES = [
+            {
+                name: '保特瓶',
+                category: 'plastic_bottle',
+                sizeName: 'Small',
+                points: 10,
+                width: 32,
+                height: 52,
+                svg: `<svg viewBox="0 0 40 70" width="100%" height="100%">
+                        <!-- PET Bottle -->
+                        <rect x="14" y="2" width="12" height="6" rx="2" fill="#0284c7"/>
+                        <path d="M16 8 L24 8 L28 18 L28 60 Q28 65 20 65 Q12 65 12 60 L12 18 Z" fill="#38bdf8" fill-opacity="0.75" stroke="#0284c7" stroke-width="2"/>
+                        <rect x="12" y="28" width="16" height="18" fill="#0ea5e9" opacity="0.6"/>
+                        <line x1="14" y1="22" x2="26" y2="22" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                      </svg>`
+            },
+            {
+                name: '飲料杯',
+                category: 'beverage_cup',
+                sizeName: 'Small',
+                points: 10,
+                width: 36,
+                height: 48,
+                svg: `<svg viewBox="0 0 50 60" width="100%" height="100%">
+                        <!-- Beverage Cup -->
+                        <path d="M10 12 L40 12 L34 54 Q34 58 25 58 Q16 58 16 54 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+                        <ellipse cx="25" cy="12" rx="16" ry="4" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
+                        <!-- Straw -->
+                        <path d="M25 12 L32 2" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M14 26 Q25 32 36 26" fill="none" stroke="#f43f5e" stroke-width="3" opacity="0.7"/>
+                      </svg>`
+            },
+            {
+                name: '紙類餐盒',
+                category: 'paper_box',
+                sizeName: 'Medium',
+                points: 20,
+                width: 52,
+                height: 44,
+                svg: `<svg viewBox="0 0 70 60" width="100%" height="100%">
+                        <!-- Paper Lunch Box -->
+                        <path d="M10 20 L60 20 L54 50 L16 50 Z" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+                        <path d="M10 20 L22 6 L48 6 L60 20 Z" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                        <line x1="22" y1="6" x2="25" y2="20" stroke="#b45309" stroke-width="1.5"/>
+                        <line x1="48" y1="6" x2="45" y2="20" stroke="#b45309" stroke-width="1.5"/>
+                        <path d="M25 35 L45 35" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+                      </svg>`
+            },
+            {
+                name: '塑膠袋',
+                category: 'plastic_bag',
+                sizeName: 'Medium',
+                points: 20,
+                width: 56,
+                height: 56,
+                svg: `<svg viewBox="0 0 70 70" width="100%" height="100%">
+                        <!-- Plastic Bag -->
+                        <path d="M20 22 C10 22 8 40 12 58 C16 66 54 66 58 58 C62 40 60 22 50 22 C44 22 42 32 35 32 C28 32 26 22 20 22 Z" fill="#ffffff" fill-opacity="0.65" stroke="#cbd5e1" stroke-width="2"/>
+                        <path d="M20 22 C18 10 26 6 30 14 C32 18 28 24 24 24" fill="none" stroke="#cbd5e1" stroke-width="3"/>
+                        <path d="M50 22 C52 10 44 6 40 14 C38 18 42 24 46 24" fill="none" stroke="#cbd5e1" stroke-width="3"/>
+                      </svg>`
+            },
+            {
+                name: '保麗龍',
+                category: 'styrofoam',
+                sizeName: 'Large',
+                points: 30,
+                width: 68,
+                height: 52,
+                svg: `<svg viewBox="0 0 80 60" width="100%" height="100%">
+                        <!-- Styrofoam Container -->
+                        <rect x="8" y="12" width="64" height="38" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.5"/>
+                        <line x1="8" y1="28" x2="72" y2="28" stroke="#cbd5e1" stroke-width="2"/>
+                        <circle cx="24" cy="20" r="2" fill="#cbd5e1"/>
+                        <circle cx="36" cy="20" r="2" fill="#cbd5e1"/>
+                        <circle cx="48" cy="20" r="2" fill="#cbd5e1"/>
+                        <path d="M12 40 Q40 46 68 40" stroke="#e2e8f0" stroke-width="3" fill="none"/>
+                      </svg>`
+            },
+            {
+                name: '漂流垃圾',
+                category: 'drift_wood',
+                sizeName: 'Extra Large',
+                points: 40,
+                width: 82,
+                height: 45,
+                svg: `<svg viewBox="0 0 90 50" width="100%" height="100%">
+                        <!-- Driftwood / Large Beach Debris -->
+                        <path d="M8 25 Q25 10 45 22 T82 18 Q88 28 80 36 Q55 42 30 32 T8 25 Z" fill="#78350f" stroke="#451a03" stroke-width="2.5"/>
+                        <path d="M20 20 Q35 28 65 24" fill="none" stroke="#92400e" stroke-width="2"/>
+                        <path d="M70 20 L82 8 L85 14 L75 24 Z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+                      </svg>`
+            }
+        ];
+
+        // State Management
+        let score = 0;
+        let level = 1;
+        let remainingTrash = 50;
+        const TOTAL_TRASH_PER_LEVEL = 50;
+
+        // DOM Elements
+        const trashLayer = document.getElementById('trash-layer');
+        const beachArea = document.getElementById('beach-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const trashCountDisplay = document.getElementById('trash-count');
+        const levelDisplay = document.getElementById('level-display');
+        const victoryModal = document.getElementById('victory-modal');
+        const modalScore = document.getElementById('modal-score');
+        const modalLevel = document.getElementById('modal-level');
+        const btnNextLevel = document.getElementById('btn-next-level');
+        const btnRestart = document.getElementById('btn-restart');
+
+        // Initialize Game
+        function initGame() {
+            score = 0;
+            level = 1;
+            updateUI();
+            spawnLevelTrash();
+        }
+
+        // Update Header Stats UI
+        function updateUI() {
+            scoreDisplay.textContent = score;
+            trashCountDisplay.textContent = remainingTrash;
+            levelDisplay.textContent = level;
+        }
+
+        // Spawn 50 Random Trash Items across the beach (bottom 50% screen height)
+        function spawnLevelTrash() {
+            trashLayer.innerHTML = '';
+            remainingTrash = TOTAL_TRASH_PER_LEVEL;
+            updateUI();
+
+            const containerWidth = beachArea.clientWidth;
+            const containerHeight = beachArea.clientHeight;
+
+            // Margin boundaries to keep items cleanly inside visible area
+            const paddingX = 40;
+            const paddingTop = 35; 
+            const paddingBottom = 50;
+
+            for (let i = 0; i < TOTAL_TRASH_PER_LEVEL; i++) {
+                // Pick random trash type
+                const trashType = TRASH_TYPES[Math.floor(Math.random() * TRASH_TYPES.length)];
+                
+                // Random position within beach area bounds
+                const posX = paddingX + Math.random() * (containerWidth - paddingX * 2 - trashType.width);
+                const posY = paddingTop + Math.random() * (containerHeight - paddingTop - paddingBottom - trashType.height);
+                
+                // Random angle from 0 to 360 deg
+                const rotation = Math.floor(Math.random() * 360);
+
+                // Create Element
+                const el = document.createElement('div');
+                el.className = 'trash-item absolute flex items-center justify-center';
+                el.style.width = `${trashType.width}px`;
+                el.style.height = `${trashType.height}px`;
+                el.style.left = `${posX}px`;
+                el.style.top = `${posY}px`;
+                el.style.transform = `rotate(${rotation}deg)`;
+                el.innerHTML = trashType.svg;
+
+                // Dataset properties for score & click tracking
+                el.dataset.points = trashType.points;
+                el.dataset.name = trashType.name;
+
+                // Click / Tap Event
+                el.addEventListener('click', (e) => collectTrash(e, el, trashType.points));
+                el.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // Prevents double triggers on mobile
+                    collectTrash(e.touches[0] || e, el, trashType.points);
+                }, { passive: false });
+
+                trashLayer.appendChild(el);
+            }
+        }
+
+        // Handle Trash Pickup Interaction
+        function collectTrash(event, element, points) {
+            if (element.classList.contains('collected')) return;
+            element.classList.add('collected');
+
+            // Play synthesized web audio sound
+            soundCtrl.playPickupSound(points);
+
+            // Update Score & Counters
+            score += points;
+            remainingTrash--;
+            updateUI();
+
+            // Get click coordinate for float animation
+            const rect = element.getBoundingClientRect();
+            const clickX = event.clientX || (rect.left + rect.width / 2);
+            const clickY = event.clientY || (rect.top + rect.height / 2);
+
+            // Trigger floating points animation
+            showFloatingScore(clickX, clickY, points);
+
+            // Pickup scale/fade animation
+            element.style.transform += ' scale(1.4)';
+            element.style.opacity = '0';
+            element.style.pointerEvents = 'none';
+
+            setTimeout(() => {
+                element.remove();
+            }, 250);
+
+            // Check Victory Condition
+            if (remainingTrash <= 0) {
+                setTimeout(triggerVictory, 400);
+            }
+        }
+
+        // Show floating point text at click location
+        function showFloatingScore(x, y, points) {
+            const floatEl = document.createElement('div');
+            floatEl.className = 'score-float text-amber-300 text-xl sm:text-2xl';
+            floatEl.style.left = `${x - 15}px`;
+            floatEl.style.top = `${y - 20}px`;
+            floatEl.textContent = `+${points}`;
+
+            document.body.appendChild(floatEl);
+
+            setTimeout(() => {
+                floatEl.remove();
+            }, 750);
+        }
+
+        // Trigger Level Completion Victory Modal
+        function triggerVictory() {
+            soundCtrl.playLevelCompleteSound();
+            modalScore.textContent = score;
+            modalLevel.textContent = level;
+            victoryModal.classList.remove('hidden');
+        }
+
+        // Event Listeners for Modal Buttons
+        btnNextLevel.addEventListener('click', () => {
+            victoryModal.classList.add('hidden');
+            level++;
+            spawnLevelTrash();
+        });
+
+        btnRestart.addEventListener('click', () => {
+            victoryModal.classList.add('hidden');
+            initGame();
+        });
+
+        // Responsive handling on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Respawn items safely into visible bounds on screen orientation change
+                if (remainingTrash > 0 && remainingTrash < TOTAL_TRASH_PER_LEVEL) {
+                    // Adjust positions if needed
+                }
+            }, 200);
+        });
+
+        // Start Game on Page Load
+        window.onload = () => {
+            initGame();
+        };
+    </script>
+</body>
+</html>
